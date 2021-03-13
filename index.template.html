@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width"/>
+    <title>Breeze Icons</title>
+    <script type="text/javascript">
+        window.all_files=String.raw`$$$FULL_DIR_TREE$$$`;
+    </script>
+    <style type="text/css">
+        .fullwidth {
+            width: 100%;
+        }
+        #search-results {
+            display: flex;
+            flex-flow: row wrap;
+            justify-content: center;
+        }
+        .tile {
+            display: flex;
+            flex: 1 1 auto;
+            align-items: center;
+            justify-content: center;
+
+            margin: 5px;
+            min-width: 128px;
+            min-height: 64px;
+            font-family: sans-serif;
+            font-size: small;
+            border-radius: 5px;
+        }
+        .tile img {
+            display: block;
+            margin: 2px;
+        }
+        .mode-dark {
+            background-color: #424242;
+            color: whitesmoke;
+        }
+        .mode-light {
+            background-color: whitesmoke;
+            color: #424242;
+        }
+    </style>
+</head>
+<body>
+<h1>Search in KDE Breeze Icons</h1>
+<form action="#" method="get" onsubmit="return false">
+    <fieldset><legend>Search in <i id="item-count">...</i> items</legend>
+        <input class="fullwidth" name="q" type="text" value="" id="search-text" autocomplete="off" spellcheck="false">
+    </fieldset>
+</form>
+<section id="search-results">
+
+</section>
+
+<script type="text/javascript">
+    (()=>{
+        function pageLoad() {
+            const aItemCount = document.getElementById("item-count");
+            const aSearchText = document.getElementById("search-text");
+            const aSearchSesults = document.getElementById("search-results");
+            const file_list = window.all_files.split("\n").filter((v) => !!v);
+
+            let currSearch = null;
+            let searchTimeout = null;
+            const aSearchText_Changed = () => {
+                const newSearch = aSearchText.value;
+                if (currSearch === newSearch)
+                    return;
+                currSearch = newSearch;
+
+                aSearchSesults.innerHTML = "";
+                const re = new RegExp(currSearch, "i");
+                for (const filename of file_list) {
+                    const m = filename.match(/\/(.*?)_(\d+)$/);
+                    if (!m) continue;
+                    const [_, imname, imsize] = m;
+                    const pxsize = (0+imsize) / window.devicePixelRatio;
+                    const lightdark = (filename.indexOf("dark")>=0) ? "mode-dark" : "mode-light";
+                    if (re.test(imname)) {
+                        const tpl = `<div class="tile ${lightdark}" title="${filename}.png">
+                            <img src="./png/${filename}.png" alt="${imname}" style="width:${pxsize}px;height:${pxsize}px;">
+                            ${imname}<br>${imsize}x${imsize}
+                         </div>`;
+                        aSearchSesults.insertAdjacentHTML("beforeend", tpl);
+                        if (aSearchSesults.childElementCount>1000) {
+                            break;
+                        }
+                    }
+                }
+            };
+
+            aItemCount.innerText = "" + file_list.length;
+            aSearchText.addEventListener("change", aSearchText_Changed);
+            aSearchText.addEventListener("keyup", () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(aSearchText_Changed, 100);
+            });
+            aSearchText_Changed();
+        }
+
+        document.addEventListener('DOMContentLoaded', pageLoad);
+    })();
+</script>
+</body>
+</html>

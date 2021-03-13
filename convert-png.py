@@ -39,7 +39,7 @@ def parallel_execute(commands, np: Optional[int] = None):
         tp.join()
 
 
-if __name__ == "__main__":
+def update_conversions():
     svg_files = []
     for cls in ICON_CLASSES:
         pclass = PATH_PNG / cls
@@ -61,3 +61,17 @@ if __name__ == "__main__":
     print(len(commands), " new conversions found")
     if len(commands):
         parallel_execute(commands, NUM_PROCS)
+
+def update_index():
+    files = PATH_PNG.glob("**/*.png")
+    filelist = "\n".join(str(f.relative_to(PATH_PNG).with_suffix("").as_posix()) for f in files)
+    with open("index.template.html", "rt") as tpl:
+        with open("index.html", "wt") as html:
+            s = tpl.read()
+            s = s.replace("$$$FULL_DIR_TREE$$$", filelist)
+            html.write(s)
+    print("index updated")
+
+if __name__ == "__main__":
+    update_conversions()
+    update_index()
