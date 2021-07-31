@@ -7587,31 +7587,54 @@ icons-dark/status-video-card-inactive_22`;
 
             let currSearch = null;
             let searchTimeout = null;
+
+            const filtered_list = function* (filterfn, max_results) {
+                let counter = 0;
+                for (const filename of file_list) {
+                    const m = filename.match(/\/(.*?)_(\d+)$/);
+                    if (!m) continue;
+                    const [_, imname, imsize] = m;
+                    if (filterfn(imname)) {
+                        yield [filename, imname, parseInt(imsize)];
+                        if (counter++ >= max_results) {
+                            break;
+                        }
+                    }
+                }
+            };
+            const regenerate_list = (filterfn) => {
+                aSearchSesults.innerHTML = "";
+                for (const [filename, imname, imsize] of filtered_list(filterfn, 1000)) {
+                    const pxsize = imsize / window.devicePixelRatio;
+                    const lightdark = (filename.indexOf("dark")>=0) ? "mode-dark" : "mode-light";
+                    const tpl = `<div class="tile ${lightdark}" title="${filename}.png">
+                        <img src="./png/${filename}.png" alt="${imname}" style="width:${pxsize}px;height:${pxsize}px;">
+                        <div>${imname}<br>${imsize}x${imsize}</div>
+                     </div>`;
+                    aSearchSesults.insertAdjacentHTML("beforeend", tpl);
+                }
+            };
+            const parse_filter = (query) => {
+                const tests = [];
+                for (const word of query.split(" ")) {
+                    if (!word) continue;
+                    tests.push(new RegExp(word, "i"));
+                }
+                return ((filename) => {
+                    for (const re of tests) {
+                        if (!re.test(filename)) return false;
+                    }
+                    return true;
+                });
+            };
             const aSearchText_Changed = () => {
                 const newSearch = aSearchText.value;
                 if (currSearch === newSearch)
                     return;
                 currSearch = newSearch;
 
-                aSearchSesults.innerHTML = "";
-                const re = new RegExp(currSearch, "i");
-                for (const filename of file_list) {
-                    const m = filename.match(/\/(.*?)_(\d+)$/);
-                    if (!m) continue;
-                    const [_, imname, imsize] = m;
-                    const pxsize = (0+imsize) / window.devicePixelRatio;
-                    const lightdark = (filename.indexOf("dark")>=0) ? "mode-dark" : "mode-light";
-                    if (re.test(imname)) {
-                        const tpl = `<div class="tile ${lightdark}" title="${filename}.png">
-                            <img src="./png/${filename}.png" alt="${imname}" style="width:${pxsize}px;height:${pxsize}px;">
-                            <div>${imname}<br>${imsize}x${imsize}</div>
-                         </div>`;
-                        aSearchSesults.insertAdjacentHTML("beforeend", tpl);
-                        if (aSearchSesults.childElementCount>1000) {
-                            break;
-                        }
-                    }
-                }
+                filter = parse_filter(currSearch);
+                regenerate_list(filter);
             };
 
             aItemCount.innerText = "" + file_list.length;
