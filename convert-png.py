@@ -48,6 +48,15 @@ def update_conversions():
         for size in ICON_SIZES:
             svg_files += sclass.glob(f"*/{size}/*.svg")
     png_files = [get_png_name(f) for f in svg_files]
+    # detect removed files
+    print("Checking removed files...")
+    existing_png_files = PATH_PNG.glob("**/*.png")
+    extras = list(set(existing_png_files) - set(png_files))
+    print(len(extras), " removed files")
+    for p in extras:
+        p.unlink()
+    # detect new/modified files
+    print("Checking new/modified files...")
     commands = []
     for svg, png in zip(svg_files, png_files):
         sstat = svg.stat()
